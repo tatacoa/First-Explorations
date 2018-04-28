@@ -1,10 +1,8 @@
 ## Data Visualization
-## First Project - Douglas Color Cards
+## First Project - Color Cards
 
-setwd('C:/Users/Bina/Desktop/DataScience/2.Semester/DataVis/FirstProject_Douglas')
-
-lab.measure <- read.csv2("LabMeasurements-Color-Card.csv")
-master.color <- read.csv2("MasterColorCard.csv") # CMYKS colors are in p1- p5 (neglect?)
+lab.measure <- read.csv2("FILENAME.csv")
+master.color <- read.csv2("FILENAME2") # CMYKS colors are in p1- p5 (neglect?)
 
 ## Play with data
 # install.packages("plot3D")
@@ -18,7 +16,7 @@ plot3d(master.color$Field, master.color$Crow, master.color$Ccol,
        col=4)
 
 plot(lab.measure$Row, lab.measure$Column)
-# install.packages("scatterplot3d") # Install
+# install.packages("scatterplot3d") # install
 library("scatterplot3d") # load
 library(colorspace) # load
 
