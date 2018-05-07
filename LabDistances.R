@@ -2,15 +2,15 @@
 ## First Project - Color Cards
 ## Analyzing Lab color differences
 
-lab.measure <- read.csv2("lab.measures-sheetname.csv")
-master.color <- read.csv2("master.color-sheetname.csv") # CMYKS colors are in p1- p5 (neglect?)
+lab.measure <- read.csv2("LabMeasurements-Color-Card.csv")
+master.color <- read.csv2("MasterColorCard.csv") # CMYKS colors are in p1- p5 (neglect?)
 
 # instantiate the iterators and the dataframe to store the values in
-lab.distances <- as.data.frame(0)
+lab.distances <- as.data.frame(matrix(c(1:3),nrow = 1))
 k <- 1
 l <- 1
 i <- 1
-# choose the amount of sheets to scan through (max=13), max value will take ~5 minutes
+# choose the amount of sheets to scan through (max=13), max will take ~5 min
 sheets <- 3
 
 # iterate through sheets
@@ -46,15 +46,21 @@ for (m in c(1:(sheets*42))){
       
       # in the storage dataframe, jump to the next row for the next card if k > 64
       if (k < 65){
-        lab.distances[l,k] <- dE
+        lab.distances[l,k + 2] <- dE
         k <- k + 1
       }else{
+        # adding row label from lab.measure file
+        lab.distances[l, 1] <- lab.measure[l, 1]
+        lab.distances[l, 2] <- lab.measure[l, 2]
         l <- l +1
-        lab.distances[l, 1] <- dE
+        lab.distances[l, 3] <- dE
         k <- 2
       }
       #print(i) #to check that everything is running smooth
       i <- i + 1
     }
   }
+  # adding the labels for the two very last rows
+  lab.distances[l, 1] <- lab.measure[l, 1]
+  lab.distances[l, 2] <- lab.measure[l, 2]
 }
