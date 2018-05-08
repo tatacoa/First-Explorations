@@ -41,5 +41,5 @@ for (i in 1:length(row.names(lab))) {
 }
 
 head(deltae) 
-              
-
+deltae <- as.data.frame(deltae)
+save(deltae, file="deltae76.Rda")
