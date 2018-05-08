@@ -68,3 +68,4 @@ for (m in c(1:(sheets*42))){
   lab.distances[l, 1] <- lab.measure[l, 1]
   lab.distances[l, 2] <- lab.measure[l, 2]
 }
+save(lab.distances, file="deltae94.Rda")
