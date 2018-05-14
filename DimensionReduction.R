@@ -1,8 +1,5 @@
 ## Data Visualization
-## First Project - Douglas Color Cards
 ## DIMENSION REDUCION
-
-setwd('C:/Users/Bina/Desktop/DataScience/2.Semester/DataVis/FirstProject_Douglas')
 
 lab <- read.csv2("LabMeasurements-Color-Card.csv")
 
