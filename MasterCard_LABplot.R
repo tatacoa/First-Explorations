@@ -26,7 +26,7 @@ head(solarized) # show top
 solarizedLAB = with(solarized, LAB(Lstar, Astar, Bstar))
 
 # show us all 64 color spots in a L-a-b plot coloured in their LAB color
-scatterplot3d(master.color[,9:11], 
+s3d <- scatterplot3d(master.color[,9:11], 
               main="Master Color Card - Lab values",
               color = hex(solarizedLAB, fixup = TRUE),
               pch = 16, 
@@ -34,3 +34,9 @@ scatterplot3d(master.color[,9:11],
               grid=TRUE,
               #col.grid = "lightblue",
               box=FALSE)
+# add labels according to color spot id
+text(s3d$xyz.convert(master.color[,9:11]), 
+     labels = rownames(master.color),
+     cex= 0.7, 
+     col = hex(solarizedLAB, fixup = TRUE),
+     pos = 3) 
