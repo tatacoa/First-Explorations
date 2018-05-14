@@ -34,7 +34,7 @@ s3d <- scatterplot3d(master.color[,9:11],
               grid=TRUE,
               #col.grid = "lightblue",
               box=FALSE)
-# add labels according to color spot id
+# add labels according to color spot field
 text(s3d$xyz.convert(master.color[,9:11]), 
      labels = rownames(master.color),
      cex= 0.7, 
