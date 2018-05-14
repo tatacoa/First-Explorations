@@ -2,7 +2,6 @@
 ## First Project - Douglas Color Cards
 ## MDS
 
-setwd('C:/Users/Bina/Desktop/DataScience/2.Semester/DataVis/FirstProject_Douglas')
 master <- read.csv2("MasterColorCard.csv") # CMYKS colors are in p1- p5 (neglect?)
 lab <- read.csv2("LabMeasurements-Color-Card.csv")
 
