@@ -49,6 +49,9 @@ deltae$JDNcount <- rowSums(deltae >= 2.3)
 # Which counts are the most common among all color cards
 boxplot(deltae$JDNcount)
 
+# all 64 color spots deltaes as boxplot next to each other
+boxplot(deltae[3:66])
+
 # which color spots have the highest mean - hence are most commonly different from the master data
 deltae.means <- colMeans(x = deltae); deltae.means
 sort(deltae.means, decreasing = TRUE)
