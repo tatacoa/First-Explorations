@@ -1,8 +1,6 @@
 ####################################################################################
 # loop for all the distances
 
-setwd('C:/Users/Bina/Desktop/DataScience/2.Semester/DataVis/FirstProject_Douglas')
-
 # Load data
 lab <- read.csv2("LabMeasurements-Color-Card.csv")
 master <- read.csv2("MasterColorCard.csv")
@@ -57,4 +55,3 @@ sort(deltae.means, decreasing = TRUE)
 # => 32         85         34         87         38         24         43         12         77
 #    34.4323202 10.2118046  9.6919683  8.5726534  7.1780514  6.8787069  5.9783299  5.9769575  5.7851123 
 #    18(hgrau)   61(lila)   20(braun)  63(blau)   24(drot)   12(braun)  27(braun)   2(dgruen) 55(grau)
-
