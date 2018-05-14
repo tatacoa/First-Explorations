@@ -1,6 +1,9 @@
 ## Data Visualization
 ## First Project - Douglas Color Cards
 ## MDS
+# The main goal of MDS it is to plot multivariate data points in two dimensions,
+# thus revealing the structure of the dataset by visualizing the relative distance
+# of the observations.
 
 master <- read.csv2("MasterColorCard.csv") # CMYKS colors are in p1- p5 (neglect?)
 lab <- read.csv2("LabMeasurements-Color-Card.csv")
