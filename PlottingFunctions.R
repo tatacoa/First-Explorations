@@ -74,3 +74,12 @@ chooseCard <- function(row) {
 card <- chooseCard(40)
 Lab.spl(master.color[,9:11], card)
 Lab.rgl(master.color[,9:11], card)
+
+pvalues <- {}
+for (i in c(1:546)){
+   test <- t.test(master.color[,9:11], chooseCard(i))
+   pvalues[i] <- test$p.value
+}
+
+hist(pvalues)
+min(pvalues)
