@@ -1,6 +1,8 @@
 ## Data Visualization
 ## First Project - Color Cards
-## This R file aims 
+## This R file aims
+
+library(colorspace)
 
 lab.measure <- read.csv2("LabMeasurements-Color-Card.csv")
 master.color <- read.csv2("MasterColorCard.csv") 
@@ -32,5 +34,8 @@ col1 <- paste(c("L", pixel.number), collapse = "")
 col2 <- paste(c("a", pixel.number), collapse = "")
 col3 <- paste(c("b", pixel.number), collapse = "")
 Lab <- c(lab.measure[max.color[1],col1], lab.measure[max.color[1],col2], lab.measure[max.color[1],col3])
-Lab
+lab.hex <- hex(LAB(Lab[1],Lab[2],Lab[3]), fixup = T)
+master.hex <- hex(LAB(master.color[which(master.color$Crow == 3 & master.color$Ccol == 2), "L"],master.color[which(master.color$Crow == 3 & master.color$Ccol == 2), "a"],master.color[which(master.color$Crow == 3 & master.color$Ccol == 2), "b"]), fixup=T)
+master.color[which(master.color$Crow == 3 & master.color$Ccol == 2), "L"]
+image(matrix(1:2,nrow=2),col=c(lab.hex, master.hex))
 # to be finished
