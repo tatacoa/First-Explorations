@@ -58,3 +58,34 @@ sort(deltae.means, decreasing = TRUE)
 # => 32         85         34         87         38         24         43         12         77
 #    34.4323202 10.2118046  9.6919683  8.5726534  7.1780514  6.8787069  5.9783299  5.9769575  5.7851123 
 #    18(hgrau)   61(lila)   20(braun)  63(blau)   24(drot)   12(braun)  27(braun)   2(dgruen) 55(grau)
+
+###### continuation @tata #########
+means_colors <- {}
+for (i in c(3:66)) {
+  means <- mean(CIE76[,i])
+  means_colors[i] <- means
+}
+means_colors[-c(1:2)] -> means_colors
+apply(CIE76[,3:66],2,mean)
+
+means_colors_sorted <- {}
+for (i in c(1:64)) {
+  colorMean <- means_colors[i] 
+  if (colorMean < 2)
+    means_colors_sorted[i] = 1
+  else if (colorMean > 2 && colorMean < 4)
+    means_colors_sorted[i] = 2
+  else if (colorMean > 4)
+    means_colors_sorted[i] = 3
+}
+means_colors_sorted
+
+# make a matrix 
+library("colorscience")
+colrange <- colorRampPalette(c("yellowgreen","yellow","red"))(3)
+mean_matrix <- matrix(means_colors_sorted, nrow = 8, ncol= 8, byrow = FALSE, dimnames = NULL)
+mean_heatmap <- heatmap(mean_matrix, Rowv=NA, Colv=NA, col = colrange, 
+                       scale="column", margins=c(5,10))
+
+
+
