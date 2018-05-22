@@ -68,5 +68,6 @@ for (m in c(1:(sheets*42))){
   lab.distances[l, 1] <- lab.measure[l, 1]
   lab.distances[l, 2] <- lab.measure[l, 2]
 }
-colnames(lab.distances) <- colnames(deltae) <- c("Row", "Column", c(11:18, 21:28, 31:38, 41:48, 51:58, 61:68, 71:78, 81:88))
+colnames(lab.distances) <- c("Row", "Column", c(11:18, 21:28, 31:38, 41:48, 51:58, 61:68, 71:78, 81:88))
 save(lab.distances, file="deltae94.Rda")
+hist(as.matrix(lab.distances[3:66]), breaks = 20, main="Histogram of CIE94",xlab="Distance to Master Color")
