@@ -1,0 +1,246 @@
+---
+title: "First Project: Douglas Color Cards"
+author: Ana Maria Sandoval Jimenez, Jannis Busch & Sabrina Steinert
+date: May 22, 2018
+output: 
+  html_document:
+    theme: lumen
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+ 
+## Introduction
+
+### The Data
+
+```{r, include=FALSE}
+# Load data
+master <- read.csv2("MasterColorCard.csv")
+lab <- read.csv2("LabMeasurements-Color-Card.csv")
+```
+
+The following report is based on two given data files both in csv format. They generally contain color code measurements of the Douglas Color Cards (DCC). The DCC are used in combination with a mobile App. The consumer takes a photo holding the DCC close to their face. With the help of the app, the correct foundation nuance is recommended based on the skin color results.
+
+![](Images/douglas-color-card.jpg)
+
+
+**The first data file** (MasterColorCard.csv) contains the "perfect" DCC as it should always be with color codes in CMYK and Lab space. The resulting dataframe from the csv file consists of 64 rows (each color spot is represented as one row) and 11 columns.
+
+```{r}
+dim(master)
+```
+
+```{r}
+names(master)
+```
+
+Each of the 64 color spots on the master DCC has a specific position, that is described in columns Crow and Ccol.
+
+**The second data file** (LabMeasurements-Color-Card.csv) is larger than the first data set because it contains several color spot measurements from multiple color cards which have been printed on 13 print sheets.
+Put into a dataframe, the data is clearly in wide format which means that the color spots are not depicted in rows but rather obtain three columns (L-a-b).
+
+```{r}
+dim(lab)
+```
+
+The dimensions are 546 row and 194 columns which can be explained with the following calculations:
+
+**13** printing sheets **x 42** color cards on each printing sheet **= 546** rows
+
+**3** L-a-b color values **x 64** color spots on each DCC **= 194** columns
+
+In conclusion, each row in this dataframe depicts one complete DCC which has been measured in the lab. 
+The file also contains the position on the printing sheet as in row and column. Therefore every row/column combinations exists 13 times. 
+
+### The Task
+The task is to make sense out of the given data sets and explore what conclusions can be drawn. The objective is to use a variety of calculations and visualization techniques to find those explanations for the given data.
+
+### The Tools
+In the process of the group work, we have been using Github and R Studio. With Github we were able to share our R scripts in an anonymized manner. R Studio has been the choice of our local working environment due to the fact that all lectures have been complemented with R Studio. Hence the environment was known to each team member. 
+
+### What We Expect
+Upon first looks into the data, we expect to find DCCs from the lab that vary a lot from the Master DCC in color space given in L-a-b values. We will explore these differences using multiple visualization techniques that have been subject in current lectures including Data Visualization and Machine Learning.
+
+
+## Data Exploration and Findings
+
+To have a first overview of the master DCC data, a 3-dimensional scatterplot was created. The following code produces one in the L-a-b space with each spot represented in the respective color on the master DCC.
+
+```{r, include=FALSE}
+# Libraries to be used in this code
+library("scatterplot3d") # load
+library(colorspace) # load
+```
+
+```{r}
+# save L, a and b values from dataframe to vectors
+Lstar = master$L
+Astar = master$a
+Bstar = master$b
+
+# create new dataframe from L-a-b vectors
+solarized = structure(list(Lstar, Astar, Bstar), .Names = c("Lstar", "Astar", "Bstar"), row.names = c(NA,16), class = "data.frame")
+solarizedLAB = with(solarized, LAB(Lstar, Astar, Bstar))
+
+# show us all 64 color spots in a L-a-b plot coloured in their LAB color
+s3d <- scatterplot3d(master[,9:11], 
+              main="Master Color Card - Lab values",
+              color = hex(solarizedLAB, fixup = TRUE),
+              pch = 16, 
+              type = "h",
+              grid=TRUE,
+              box=FALSE)
+```
+
+###K-Means Clustering
+After an initial feeling for the master DCC, one way to visually access the lab data is to cluster each of the 546 DCC.
+
+```{r, include=FALSE}
+library(factoextra)
+```
+
+In order to 
+```{r}
+# function will determine best k via elbow method
+fviz_nbclust(lab, kmeans, method = "wss")
+```
+
+The elbow is visible at "Number of clusters k"  = 3, where the Sum of Squares falls rapidly for the last time. Hence we will choose the K-means clustering with 3 clusters and plot them for the first two principal components.
+
+```{r}
+# Run a K-means clustering with 3 clusters and plot the clusters for first 2 principal components
+km.out<-kmeans(lab,centers=3,nstart=1) #run with four clusters
+pr.out<-prcomp(lab,scale=TRUE)
+plot(pr.out$x[,1:2],type="n", main="546 Clustered Color Cards", ylab="PC2")
+text(pr.out$x[,1:2],col=km.out$cluster)
+```
+
+### MDS
+The main goal of MDS it is to plot multivariate data points in two dimensions, thus revealing the structure of the dataset by visualizing the relative distance of the observations.
+
+```{r}
+# Plot the master card's color spots with their field number labels into a 2D space
+master <- as.matrix(master)[, 9:11]
+mds <- cmdscale(dist(master))
+
+# Plot the labs means of all color spots with their field number labels into a 2D space
+# calculate the lab measurements means
+mlab <- colMeans(x = lab)
+mlab <- as.matrix(mlab)[3:194]
+mlab <- t(mlab)
+mlab <- as.data.frame(matrix(unlist(mlab, use.names=FALSE),ncol=3, byrow=TRUE))
+colnames(mlab) <- c("L", "a", "b")
+mlab <- as.matrix(mlab)
+mds.ml <- cmdscale(dist(mlab))
+
+# Plot both (master and mean lab results) into one space
+plot(mds.ml, type = 'n', main="Master and mean lab DCC results compared", xlab="MDS 1", ylab="MDS 2")
+text(mds[, 1], mds[, 2], cex=0.8) # master
+text(mds.ml[, 1], mds.ml[, 2], col="red", cex=0.8) # lab means
+legend(x = 40 , y = 51,
+       legend = c("Master", "Mean Lab Results"), 
+       fill = c("black", "red"), 
+       bty = "n", 
+       cex = 0.8)
+
+# add connecting lines into plot
+segments(mds[, 1], mds[, 2], mds.ml[, 1], mds.ml[, 2] ,col = par("fg"), lty = par("lty"), lwd = par("lwd"))
+```
+
+The MDS plot visualizes the master data points (black) values in a 2d plot and their distance to the mean of all color spots from the lab results (red). The position of the numbers in the plot is derived from their L-a-b color spot values. The numbers in the plot are the respective color spot with labels from 1 to 64.
+One can see from this plot that there are lab result color spots that are more different than the actual master color spot l-a-b color value. Visibly different are color spots 8 with the visually greatest distance from the master color spot as well as 61 and 63.
+It makes sense to have a closer look into this difference on a detailed level (and not on the "mean over all lab results" scale) which is what we are doing in the following visualisations.
+
+### CIE76
+
+The CIE76 deltaE was used in order to obtain an easy-to-calculate color measurement; the Euclidian distance is used for determining color distance.
+
+using: 
+$$ ({L_{1}^{*}},{a_{1}^{*}},{b_{1}^{*}})$$ and  $$({L_{2}^{*}},{a_{2}^{*}},{b_{2}^{*}}),$$ 
+two colors in L-a-b:
+
+$$
+\Delta E_{ab}^{*}={\sqrt {(L_{2}^{*}-L_{1}^{*})^{2}+(a_{2}^{*}-a_{1}^{*})^{2}+(b_{2}^{*}-b_{1}^{*})^{2}}}
+$$
+```{r, include=FALSE}
+# Load data
+master <- read.csv2("MasterColorCard.csv")
+lab <- read.csv2("LabMeasurements-Color-Card.csv")
+```
+```{r compute CIE76}
+deltae <- matrix(NA,nrow = 546, ncol=66, byrow = TRUE)
+deltae[,1] <- lab[,1]; 
+deltae[,2] <- lab[,2]; 
+
+# colnames(deltae)
+colnames(deltae) <- c("Row", "Column", c(11:18, 21:28, 31:38, 41:48, 51:58, 61:68, 71:78, 81:88))
+
+distance_single <- {}
+distance_row <- {}
+
+
+for (i in 1:length(row.names(lab))) {
+    cardmatrix <- matrix(lab[i,-c(1:2)],nrow=64,ncol=3,byrow=TRUE)
+    colnames(cardmatrix) = c("L","a","b")
+    for (j in 1:64) {
+        cardmatrix[j,] -> matrixA
+        master[j,] -> matrixB
+        distance_single <- sqrt((matrixA$L - matrixB$L)^2 + (matrixA$a - matrixB$a)^2 + (matrixA$b - matrixB$b)^2)
+        distance_row[j] <- distance_single
+    }
+    deltae[i,-c(1:2)] <- distance_row
+}
+```
+
+The following histogram shows the frequency of all eucledean distances between each master DCC color spot and each corresponding lab result color spot. 
+
+```{r plot CIE76}
+hist(deltae, #breaks = 20, 
+     xlim = range(0:40),#c(0,40), 
+     main = paste("Histogram of" , 'CIE76', "of Master"),
+     ylim = NULL,
+     xlab = 'Euclidean Distance', ylab = 'Frequency', col = 'lightblue',
+     #axes = FALSE, 
+     plot = TRUE, labels = FALSE)
+```
+
+The results data concerning CIE76 euclidean distance is still distinguishable to the human eye under controlled viewing conditions. The $$\Delta E_{ab}^{*}\approx 2.3$$ corresponds to the just noticeable difference (JND). The metric here varies between 0.05 units and 36.44 units.
+One can see from the histogram above that most eucledian distances are below the JND. A few euclidean distances even reach above 30 which means that the colors differ a lot between the master CDD color spot and the mean of the respective lab result color spots. 
+
+```{r heatmap code}
+deltae -> CIE76
+colorMean <- apply(CIE76[,3:66],2,mean)
+colors_jnd <- {}
+for (i in c(1:64)) {
+  x <- colorMean[i] 
+  if (x < 1)                # Unnoticable to the human eye
+    colors_jnd[i] = 1
+  else if (1 < x && x < 2)  # barely noticable
+    colors_jnd[i] = 2
+  else if (2 < x && x < 4)  # noticable difference on a keen eye
+    colors_jnd[i] = 3
+  else if (4 < x )          # clearly distinct
+    colors_jnd[i] = 4
+}
+
+mean_matrix <- matrix(colors_jnd, nrow = 8, ncol= 8, byrow = TRUE, dimnames = NULL)
+```
+
+Depicted in a 8x8 heatmap that contains all 64 color spots, one can now see which color spots differ the most between master and lab results.
+
+```{r heatmap}
+# heatmap with col = heatmap()
+mean_heatmap <- heatmap(mean_matrix, Rowv=NA, Colv=NA, col = heat.colors(4, alpha=1), 
+                       scale="column", margins=c(5,10))
+```
+
+
+
+
+
+## Conclusion
+
+
