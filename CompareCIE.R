@@ -43,8 +43,8 @@ hist(dd.means, breaks = 20, xlim = c(0,40))
 
 # plotting means of cIE94 against CIE76
 par(mfrow=c(1,1))
-plot(CIE76.means, CIE94.means)
+plot(CIE76.means ~ CIE94.means, type="n")
 # add line for comparing level of identity
 abline(a=0, b=1)
-
+text(CIE94.means, CIE76.means, labels=colnames(CIE94[3:66]))
 # the plot shows that CIE76 always generated a greater difference than CIE94. 
