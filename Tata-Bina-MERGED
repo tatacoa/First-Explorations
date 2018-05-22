@@ -9,7 +9,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 ```
  
 ## Introduction
@@ -211,7 +211,7 @@ The results data concerning CIE76 euclidean distance is still distinguishable to
 One can see from the histogram above that most eucledian distances are below the JND. A few euclidean distances even reach above 30 which means that the colors differ a lot between the master CDD color spot and the mean of the respective lab result color spots. 
 
 ```{r heatmap code}
-deltae -> CIE76
+CIE76 <- deltae
 colorMean <- apply(CIE76[,3:66],2,mean)
 colors_jnd <- {}
 for (i in c(1:64)) {
@@ -237,10 +237,257 @@ mean_heatmap <- heatmap(mean_matrix, Rowv=NA, Colv=NA, col = heat.colors(4, alph
                        scale="column", margins=c(5,10))
 ```
 
+## CIE94
 
+The CIE94 deltaE was used in order to obtain a more advanced mesasurement on the differences among colors. CIE94 was introduced in 1994 as an extension to the formerly established CIE76. It's basic structure is similar to CIE76 in that it uses the Euclidean Distance, though it includes additional weighting factors to account for application specific differences in perception. According to Wikipedia: "[CIE94] addresses perceptual non-uniformities, while retaining the L*a*b* color space, by the introduction of application-specific weights derived from an automotive paint test's tolerance data."
 
+$$ ({L_{1}^{*}},{a_{1}^{*}},{b_{1}^{*}})$$ and  
+$$({L_{2}^{*}},{a_{2}^{*}},{b_{2}^{*}}),$$ 
+two colors in L*a*b*:
+
+$$
+\Delta E_{94}^{*}={\sqrt {(\frac{\Delta L^{*}}{k_{L}S_{L}})^{2}+(\frac{\Delta C_{ab}^{*}}{k_{C}S_{C}})^{2}+(\frac{\Delta H_{ab}^{*}}{k_{H}S_{H}})^{2}}}
+$$
+In detail, the equation consists of the following sub-operations: 
+$$
+\Delta L^{*} = L_1^{*} - L_2^{*}\\
+C_1^* = {\sqrt {a_1^{*2} + b_1^{*2}}}\\
+C_2^* = {\sqrt {a_2^{*2} + b_2^{*2}}}\\
+\Delta C_{ab}^{*} = C_1^* - C_2^*\\
+\Delta H_{ab}^* = {\sqrt {{{\Delta E_{ab}^{*}}^2} - {\Delta L^*}^2 - {{\Delta C_{ab}^{*}}^2}}} = {\sqrt {{{\Delta a^{*}}^2} + {\Delta b^*}^2 - {{\Delta C_{ab}^{*}}^2}}}\\
+\Delta a^* = a_1^* - a_2^*\\
+\Delta b^* = b_1^* - b_2^*\\
+S_L = 1\\
+S_C = 1 + K_1C_1^*\\
+S_H = 1 + K_2C_1^*\\
+k_L = 1\\
+K_1 = 0.045; K_2 = 0.015
+$$
+
+The matrix consisting of the differences between every single one of the pixels from the printed cards versus the master color data resulted in a similar outcome as the CIE76 comparison provided. 
+
+```{r load data, echo=FALSE}
+# Load data
+lab.measure <- read.csv2("LabMeasurements-Color-Card.csv")
+master.color <- read.csv2("MasterColorCard.csv")
+```
+```{r compute CIE94 function}
+# function to compute the distances based on Lab1 and Lab2
+labDistance <- function(L1,a1,b1,L2,a2,b2) {
+  # collection of all values from CIE94
+  dL <- L1 - L2
+  C1 <- sqrt((a1)^2 + (b1)^2)
+  C2 <- sqrt((a2)^2 + (b2)^2)
+  dC <- C1-C2
+  da <- a1 - a2
+  db <- b1 - b2
+  dH <- sqrt(da^2 + db^2 - dC^2)
+  Sl <- 1
+  kL <- 1
+  K1 <- 0.045
+  K2 <- 0.015
+  Sc <- 1 + K1*C1
+  Sh <- 1 + K2*C1
+  
+  # final distance value
+  dE <- sqrt((dL/(kL * Sl))^2 + (dC/Sc)^2 + (dH/Sh)^2)
+  return(dE)
+}
+```
+``` {r instantiation, echo=FALSE}
+# instantiate the iterators and the dataframe to store the values in
+lab.distances <- as.data.frame(matrix(c(1:3),nrow = 1))
+k <- 1
+l <- 1
+i <- 1
+# choose the amount of sheets to scan through (max=13), max will take ~5 sec
+sheets <- 13
+
+# iterate through cards
+for (m in c(1:(sheets*42))){
+  # iterate through pixel
+  for (j in c(3:dim(lab.measure)[2])){
+    # if iterator is not dividable by 3, jump to the next j i.e. jumping over the Lab sequences
+    if (j%%3 != 0){
+      
+    }else{
+      
+      if (i > 64){
+        i <- 1
+      }
+      
+      # in the storage dataframe, jump to the next row for the next card if k > 64
+      if (k < 65){
+        lab.distances[l,k + 2] <- labDistance(master.color[i,9], master.color[i,10],master.color[i,11],lab.measure[m,j],lab.measure[m,j+1], lab.measure[m,j+2])
+        k <- k + 1
+      }else{
+        # adding row label from lab.measure file
+        lab.distances[l, 1] <- lab.measure[l, 1]
+        lab.distances[l, 2] <- lab.measure[l, 2]
+        l <- l +1
+        lab.distances[l, 3] <- labDistance(master.color[i,9], master.color[i,10],master.color[i,11],lab.measure[m,j],lab.measure[m,j+1], lab.measure[m,j+2])
+        k <- 2
+      }
+      #print(i) #to check that everything is running smooth
+      i <- i + 1
+    }
+  }
+  # adding the labels for the two very last rows
+  lab.distances[l, 1] <- lab.measure[l, 1]
+  lab.distances[l, 2] <- lab.measure[l, 2]
+}
+colnames(lab.distances)<- c("Row", "Column", c(11:18, 21:28, 31:38, 41:48, 51:58, 61:68, 71:78, 81:88))
+CIE94 <- lab.distances
+
+```
+
+## Comparing CIE76 vs CIE94
+
+The histogram of the distances for each color shows some outliers, though the majority of color dots is very close to the master color data. The histogram looks similar to the CIE76 plot, though one can observe that the histogram is shifted slightly to the right, indicating that the CIE76 differences might measure larger differences than the CIE94 method. 
+
+```{r echo=FALSE}
+par(mfrow=c(1,2))
+hist(as.matrix(lab.distances[3:66]), xlim=c(0,40),
+     breaks = 20, 
+     main="Histogram of CIE94",
+     ylim = c(0,20000),
+     xlab="Distance to Master Color")
+hist(deltae, breaks = 20, xlim = c(0,40), 
+     main = "Histogram of CIE76",
+     ylim = c(0,20000),
+     xlab = 'Distance to Master Color')
+
+```
+
+By plotting the average differences of the distance values comparing the mean results of CIE76 vs CIE94 it is to be concluded that there is only a marginal difference between the two methods.Comparing the results of CIE76 and CIE94 in a scatterplot reveals that in general the measured distances appear larger in CIE76 versus CIE94.
+
+```{r comparing CIE76 vs CIE94 statistically}
+# compare dimensions
+# dim(CIE76); dim(CIE94)
+
+# subtract the deltaes of CIE94 off the deltaes of CIE76 to analyse the differences between both equations (dd, the double d stands for double deltae!)
+dd <- CIE76[,3:66] - CIE94[,3:66]
+# calculate means of the double deltae and the total mean of everything
+dd.means <- apply(dd, 2, mean)
+dd.mean <- mean(dd.means)
+dd.max <- max(dd)
+
+# do the same to the original two dataframes
+# CIE76
+CIE76.means <- apply(CIE76[,3:66], 2, mean)
+CIE76.mean <- mean(CIE76.means)
+CIE76.max <- max(CIE76[,3:66])
+
+# CIE94
+CIE94.means <- apply(CIE94[,3:66], 2, mean)
+CIE94.mean <- mean(CIE94.means)
+CIE94.max <- max(CIE94[,3:66])
+
+# plot histograms of CIE76, CIE94 data and the double d in same scale for comparison
+hist(dd.means, breaks = 5, xlim = c(0,10), xlab="Average difference CIE76 vs CIE94", main="Histogram of Difference between CIE94 and CIE76")
+```
+
+Comparing the mean results of CIE76 and CIE94 in a scatterplot reveals that in general the measured distances appear larger in CIE76 versus CIE94. Not a single color has been measured with a larger difference on average with CIE94 than it was calculated with CIE76, as the line represents the unity vector through the origin. 
+
+```{r scatterplot}
+# plotting means of cIE94 against CIE76
+par(mfrow=c(1,1))
+plot(CIE76.means ~ CIE94.means, type="n", main="CIE94 Means vs CIE76 Means", xlab="Means of CIE94",ylab="Means of CIE76")
+# add line for comparing level of identity
+abline(a=0, b=1)
+text(CIE94.means, CIE76.means, labels=colnames(CIE94[3:66]))
+```
+
+Finally, CIE94 provides a more accurate estimation of the perceived color difference as it also takes into account parameters such as lightness, chroma and hue value. However, due to the complexity of its calculation, it requires more computing time. Additionally, as we are not dealing with complex pictures (i.e. high resolution pictures with various levels of saturation and lightness), the choice of whether to use CIE76 or CIE94 is not a very relevant one, as both methods yield statistically speaking similar results (i.e. p-value > 0.5):
+
+```{r}
+t.test(CIE94.means,CIE76.means)
+```
+
+## Master Pixels against the Largest Distance Pixels
+
+In order to "see" the scope of differences among the pixels in the color cards, we identify the pixels of each of the 546 cards with the largest difference to the respective pixel in the master card. We then reproduce a "card of maximum distances" and compare it against the original master card. The colors have been transformed from Lab values to their respective hexadecimal values to plot them in R.
+```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+# attach sheet numbers to distance deltae data frame
+sheet.number <- {}
+k <- 1
+for (i in 1:546) {
+  if (k>13) {
+    k <- 1
+  }
+  sheet.number[i] <- k
+  k <- k +1
+}
+CIE94 <- cbind(sheet.number, CIE94)
+
+# identify cell with the largest distance between lab and master color
+#CIE94[which.max(apply(CIE94,1,max)), which.max(apply(CIE94,2,max))]
+# extract row and column values
+max.color <- c(which.max(apply(CIE94,1,max)), which.max(apply(CIE94,2,max)))
+# extract column name i.e. color card pixel position
+pixel.number <- colnames(CIE94[max.color[2]])
+# extract sheet number
+sheet.number <- CIE94[max.color[1], 1]
+# build column name, e.g. "L12", "a42"
+col1 <- paste(c("L", pixel.number), collapse = "")
+col2 <- paste(c("a", pixel.number), collapse = "")
+col3 <- paste(c("b", pixel.number), collapse = "")
+# collect Lab value
+Lab <- c(lab.measure[max.color[1],col1], lab.measure[max.color[1],col2], lab.measure[max.color[1],col3])
+# transform Lab value to hexadecimal color
+lab.hex <- hex(LAB(Lab[1],Lab[2],Lab[3]), fixup = T)
+# create hexadecimal color of master card
+master.hex <- hex(LAB(master.color[which(master.color$Crow == 3 & master.color$Ccol == 2), "L"],master.color[which(master.color$Crow == 3 & master.color$Ccol == 2), "a"],master.color[which(master.color$Crow == 3 & master.color$Ccol == 2), "b"]), fixup=T)
+
+allMax <- matrix(NA,nrow = 64, ncol=3, byrow = TRUE)
+for (i in 4:67) {
+  allMax[i-3, 1] <- which.max(CIE94[,i])
+  allMax[i-3, 2] <- i-3
+  allMax[i-3, 3] <- max(CIE94[,i])
+
+}
+
+# function to display a color card. Expects a distance matrix of 64:2, 
+# with rowvalue being the row value of CIE94 and column value being the column value of CIE94 (as in 3~13,64~88)
+colorcardDisplay <- function(pixels){
+  pixel.numbers <- matrix(NA, nrow=64, ncol=1, byrow=TRUE)
+  for (i in 1:64){
+    pixel.numbers[i,1] <- colnames(CIE94[pixels[i, 2]+3])
+  }
+  pixels <- cbind(pixels, pixel.numbers)
+
+  pixel.hex <- matrix(NA, nrow=64, ncol=2, byrow=T)
+  for (i in 1:64){
+    col1 <- paste(c("L", pixels[i,4]), collapse = "")
+    col2 <- paste(c("a", pixels[i,4]), collapse = "")
+    col3 <- paste(c("b", pixels[i,4]), collapse = "")
+    Lab <- c(lab.measure[pixels[i,1],col1], lab.measure[pixels[i,1],col2], lab.measure[pixels[i,1],col3])
+    lab.hex <- hex(LAB(Lab[1],Lab[2],Lab[3]), fixup = T)
+    pixel.hex[i,1] <- pixels[i,3]
+    pixel.hex[i,2] <- lab.hex
+  }
+  image(matrix(1:64,nrow=8),col=pixel.hex[,2],main="Maximum Distances Card",xlab="",ylab="", axes= FALSE)
+  axis(side=1, at=seq(from=0,to=1,length.out=8),labels=c(1:8))
+  axis(side=2, at=seq(from=0,to=1,length.out=8),labels=c(1:8))
+}
+
+# function to display the master color card. No inputs expected
+mastercardDisplay <- function(){
+  master.hex <- matrix(NA,nrow=64,ncol = 1,byrow=T)
+  for(i in 1:64){
+    master.hex[i,1] <- hex(LAB(master.color[i, "L"],master.color[i, "a"],master.color[i, "b"]), fixup=T)
+  }
+  image(matrix(1:64,nrow=8),col=master.hex[,1],main="Master Color Card",
+        xlab="",ylab="", axes= FALSE)
+  axis(side=1, at=seq(from=0,to=1,length.out=8),labels=c(1:8))
+  axis(side=2, at=seq(from=0,to=1,length.out=8),labels=c(1:8))
+}
+par(mfrow=c(1,2))
+colorcardDisplay(allMax)
+mastercardDisplay()
+```
 
 
 ## Conclusion
 
-
+Something like:  Whether or not the printer quality is bad depends on the sensitivitiy of the app-algorithm. If a Lab distance of >30 can be tolerated, then the printing quality is fine, otherwise, this would lead to errors when using the app.
